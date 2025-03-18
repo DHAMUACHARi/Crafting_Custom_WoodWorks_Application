@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1039476326950",
+    "project_id": "crafting-custom-woodword",
+    "storage_bucket": "crafting-custom-woodword.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039476326950:android:f5588f4d75d96ee1dc5ce7",
+        "android_client_info": {
+          "package_name": "com.crafting_custom_woodworks.www.crafting_custom_woodworks"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlKC2yXT5fsWHyF78JGP6Qn2fEwwPiemA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039476326950:android:819b369cfc4decc0dc5ce7",
+        "android_client_info": {
+          "package_name": "com.dhamu.www"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlKC2yXT5fsWHyF78JGP6Qn2fEwwPiemA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

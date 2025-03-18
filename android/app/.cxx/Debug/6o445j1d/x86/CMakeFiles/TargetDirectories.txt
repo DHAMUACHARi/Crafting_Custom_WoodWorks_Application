@@ -1,0 +1,2 @@
+C:/Users/91630/AndroidStudioProjects/Crafting_Custom_WoodWorks_Application/android/app/.cxx/Debug/6o445j1d/x86/CMakeFiles/edit_cache.dir
+C:/Users/91630/AndroidStudioProjects/Crafting_Custom_WoodWorks_Application/android/app/.cxx/Debug/6o445j1d/x86/CMakeFiles/rebuild_cache.dir
