@@ -1,4 +1,5 @@
-import 'package:crafting_custom_woodworks/common_widget/extentions.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,10 +34,11 @@ class UserLoginView extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
-    final isMobile = context.isMobile();
-    final isTablet = context.isTablet();
+    final isMobile = width < 600;
+    final isTablet = width >= 600 && width < 1024;
+    final isWeb = kIsWeb; // Check if running on the web
 
-    double paddingHorizontal = width * 0.05;
+    double paddingHorizontal = isWeb ? width * 0.2 : width * 0.05;
     double paddingVertical = height * 0.02;
     double fontSize = isMobile ? 16 : (isTablet ? 18 : 20);
 
@@ -75,7 +77,7 @@ class UserLoginView extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const SizedBox(height: 8),
-                          Image.asset(logo, height: height * 0.3),
+                          Image.asset(logo, height: isWeb ? height * 0.2 : height * 0.3),
                           const Text("Log in", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 23)),
                           SizedBox(height: paddingVertical),
                           EmailField(bloc: bloc, state: state),
@@ -89,50 +91,9 @@ class UserLoginView extends StatelessWidget {
                             color2: buttonColor2,
                           ),
                           SizedBox(height: paddingVertical),
-                          SizedBox(
-                            width: width,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text("Log in with", style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                                const SizedBox(width: 10),
-                                InkWell(
-                                  onTap: () {
-                                    bloc.add(GoogleLoginEvent());
-                                  },
-                                  child: Image.asset(google, width: 25, height: 30),
-                                ),
-                                const SizedBox(width: 10),
-                                InkWell(
-                                  onTap: () {
-                                    BlocProvider.of<UserLoginBloc>(context).add(FacebookLoginEvent());
-
-                                  },
-                                  child: Image.asset(facebook, width: 25, height: 30),
-                                ),
-                                const SizedBox(width: 10),
-                                InkWell(
-                                  onTap: () {},
-                                  child: Image.asset(github, width: 30, height: 40),
-                                ),
-                              ],
-                            ),
-                          ),
+                          SocialLoginOptions(bloc: bloc, fontSize: fontSize),
                           SizedBox(height: paddingVertical),
-                          RichText(
-                            text: TextSpan(
-                              text: 'No account? ',
-                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w400, fontSize: fontSize),
-                              children: <TextSpan>[
-                                TextSpan(
-                                  text: 'Sign up',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: buttonColor1),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () => context.push('/user_sign_up'),
-                                ),
-                              ],
-                            ),
-                          ),
+                          SignUpLink(fontSize: fontSize),
                         ],
                       ),
                     ),
@@ -161,7 +122,67 @@ class UserLoginView extends StatelessWidget {
   }
 }
 
+// Separate Widget for Social Login Buttons
+class SocialLoginOptions extends StatelessWidget {
+  final UserLoginBloc bloc;
+  final double fontSize;
 
+  const SocialLoginOptions({super.key, required this.bloc, required this.fontSize});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("Log in with", style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
+          const SizedBox(width: 10),
+          InkWell(
+            onTap: () => bloc.add(GoogleLoginEvent()),
+            child: Image.asset(google, width: 25, height: 30),
+          ),
+          const SizedBox(width: 10),
+          InkWell(
+            onTap: () => bloc.add(FacebookLoginEvent()),
+            child: Image.asset(facebook, width: 25, height: 30),
+          ),
+          const SizedBox(width: 10),
+          InkWell(
+            onTap: () {},
+            child: Image.asset(github, width: 30, height: 40),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Separate Widget for Sign-Up Link
+class SignUpLink extends StatelessWidget {
+  final double fontSize;
+
+  const SignUpLink({super.key, required this.fontSize});
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        text: 'No account? ',
+        style: TextStyle(color: Colors.black, fontWeight: FontWeight.w400, fontSize: fontSize),
+        children: <TextSpan>[
+          TextSpan(
+            text: 'Sign up',
+            style: TextStyle(fontWeight: FontWeight.bold, color: buttonColor1),
+            recognizer: TapGestureRecognizer()..onTap = () => context.push('/user_sign_up'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Email Field Widget
 class EmailField extends StatelessWidget {
   final UserLoginBloc bloc;
   final UserLoginState state;
@@ -187,6 +208,7 @@ class EmailField extends StatelessWidget {
   }
 }
 
+// Password Field Widget
 class PasswordField extends StatelessWidget {
   final UserLoginBloc bloc;
   final UserLoginState state;
@@ -212,4 +234,3 @@ class PasswordField extends StatelessWidget {
     );
   }
 }
-
