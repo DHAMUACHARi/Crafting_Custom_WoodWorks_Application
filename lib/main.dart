@@ -6,8 +6,8 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'app_routes/app_routes.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  // WidgetsFlutterBinding.ensureInitialized();
+  // await Firebase.initializeApp();
   final router = await AppRoutes.createRouter();
 
   runApp(MyApp(router: router));
