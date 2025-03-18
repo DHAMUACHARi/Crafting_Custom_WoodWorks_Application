@@ -1,356 +1,334 @@
-import 'package:crafting_custom_woodworks/common_widget/extentions.dart';
-import 'package:crafting_custom_woodworks/ui/user/user_sign_up/user_sign_up_bloc/user_sign_up_bloc.dart';
-import 'package:crafting_custom_woodworks/ui/user/user_sign_up/user_sign_up_bloc/user_sign_up_state.dart';
+import 'package:crafting_custom_woodworks/Network/service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pinput/pinput.dart';
+import 'package:crafting_custom_woodworks/Network/repository.dart';
+import 'package:crafting_custom_woodworks/ui/user/user_sign_up/user_sign_up_bloc/user_sign_up_bloc.dart';
+import 'package:crafting_custom_woodworks/ui/user/user_sign_up/user_sign_up_bloc/user_sign_up_event.dart';
+import 'package:crafting_custom_woodworks/ui/user/user_sign_up/user_sign_up_bloc/user_sign_up_state.dart';
 import '../../../common_widget/CustomTextField.dart';
 import '../../../common_widget/ProgressIndicatorWidget.dart';
 import '../../../common_widget/custom_button.dart';
 import '../../../resources/color_resources.dart';
 import '../../../resources/image_resources.dart';
-class UserSignUpScreen extends StatefulWidget {
-  const UserSignUpScreen({super.key});
 
-  @override
-  State<UserSignUpScreen> createState() => _UserSignUpScreenState();
-}
+class UserSignUpScreen extends StatelessWidget {
+  UserSignUpScreen({super.key});
 
-class _UserSignUpScreenState extends State<UserSignUpScreen> {
-  int curentStep=-1;
+  final UserSignUpBloc userSignUpBloc = UserSignUpBloc(repository: Repository(service: Service()));
+  final List<String> stepLabels = ['Email', 'Name', 'Birthday', 'Gender', 'Phone', 'Address', 'Password'];
+  final PageController pageController = PageController();
+
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final height = MediaQuery.sizeOf(context).height;
-    final isMobile = context.isMobile();
-    final isTablet = context.isTablet();
-    double paddingHorizontal = width * 0.05;
-    double paddingVertical = height * 0.02;
-    double fontSize = isMobile ? 16 : (isTablet ? 18 : 20);
-
-    if (isMobile) {
-      return BlocProvider(
-  create: (context) => UserSignUpBloc(),
-  child: Scaffold(
-        backgroundColor: Colors.white,
-        body: BlocConsumer<UserSignUpBloc, UserSignUpState>(
-  listener: (context, state) {
-    // TODO: implement listener
-  },
-  builder: (context, state) {
-    return SingleChildScrollView(
-          child: SafeArea(
-            child: Center(
-              child: Column(
-                children: [
-
-                  Image.asset(
-                    height: height*0.4,
-                    account1,
-                    fit: BoxFit.fitHeight,
-                  ),
-
-                  // Create account text
-                  Text("Create account", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 23)),
-                  SizedBox(height: paddingVertical),
-                  ProgressIndicatorWidget(
-                    currentStep: curentStep,
-                    totalSteps: 5,
-                    stepLabels: ['Email', 'Name', 'Birthday', 'Gender', 'Pass'],
-                  ),
-                  SizedBox(height: paddingVertical),
-                  if(curentStep==-1)
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: paddingHorizontal,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text('Email', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                          ),
-                        ),
-                        CustomTextField(hint: "Demo123@gmail.com"),
-
-                      ],
-                    ),
-                  ),
-                  if(curentStep==0)
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: paddingHorizontal,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Text('Your Full Name', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
+    return BlocProvider(
+      create: (context) => userSignUpBloc,
+      child: BlocConsumer<UserSignUpBloc, UserSignUpState>(
+        listener: (context, state) {
+          if (state.status == Status.success) {
+            Future.delayed(Duration(milliseconds: 100), () {
+              if (state.currentStep < stepLabels.length) {
+                print("Moving to step: ${state.currentStep}");
+                pageController.jumpToPage(state.currentStep);
+              } else {
+                // Ensure the dialog is shown in the UI
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _showSuccessDialog(context);
+                });
+              }
+            });
+          } else if (state.status == Status.failure) {
+            // Show error message (if needed)
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message ?? "Signup Failed")),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Stack(
+              children: [
+                SafeArea(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(account1, height: 200, fit: BoxFit.fitHeight),
+                            SizedBox(height: 20),
+                            Text("Create Account", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+                            SizedBox(height: 20),
+                            ProgressIndicatorWidget(
+                              currentStep: state.currentStep,
+                              totalSteps: stepLabels.length,
+                              stepLabels: stepLabels,
                             ),
-                          ),
-                          CustomTextField(hint: "Dhamu"),
-
-                        ],
-                      ),
-                    ),
-                  if(curentStep==1)
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: paddingHorizontal,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Text('Date of birth', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                            ),
-                          ),
-                          CustomTextField(hint: "DD/MM/YYYY",dataType: DataTypes.numeric,),
-
-                        ],
-                      ),
-                    ),
-                  if(curentStep==2)
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: paddingHorizontal,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Text('Gender', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                            ),
-                          ),
-                          CustomTextField(hint: "Select your gender"),
-
-                        ],
-                      ),
-                    ),
-                  if(curentStep==3)
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: paddingHorizontal,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Text('Password', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                            ),
-                          ),
-                          CustomTextField(hint: ""),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Text('Confirm Password', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                            ),
-                          ),
-                          CustomTextField(hint: ""),
-
-                        ],
-                      ),
-                    ),
-                  if (curentStep == 4) // Pin input step
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                'OTP Code',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: fontSize,
-                                ),
+                            SizedBox(height: 20),
+                            SizedBox(
+                              height: 200,
+                              child: PageView.builder(
+                                controller: pageController,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: stepLabels.length,
+                                itemBuilder: (context, index) {
+                                  return _buildStepContent(index, state);
+                                },
                               ),
                             ),
-                          ),
-                          SizedBox(height: 10),
-                          Pinput(
-                            length: 6, // Number of digits to input
-                            onCompleted: (pin) {
-                              // Handle completed PIN input
-                              print('OTP Code: $pin');
-                            },
-                            defaultPinTheme: PinTheme(
-                              width: 56,
-                              height: 56,
-                              textStyle: TextStyle(
-                                fontSize: 20,
-                                color: Color.fromRGBO(30, 60, 87, 1),
-                                fontWeight: FontWeight.w600,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color:Colors.black
-                                ),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                            ),
-                          ),
-                        ],
+                            SizedBox(height: 20),
+                            _buildNavigationButtons(context, state),
+                            SizedBox(height: 20),
+                            _buildLoginLink(context),
+                          ],
+                        ),
                       ),
                     ),
-
-                  SizedBox(height: paddingVertical),
-                  Padding(
-                    padding: EdgeInsets.all(paddingHorizontal),
-                    child: CustomButton(
-                        buttonText: curentStep==3 ?"Finish":"Continue",
-                        onPressed: () => {
-                          setState(() {
-                            curentStep++;
-                            print(curentStep);
-                            if(curentStep==5)
-                              {
-                                context.go('/');
-                              }
-                          })
-                        }, color1: buttonColor1, color2: buttonColor2),
                   ),
-                  SizedBox(height: paddingVertical),
-
-                  // Social login buttons
-                  SizedBox(
-                    width: width,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Sig up with", style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(google, width: 25, height: 30),
-                        ),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(facebook, width: 25, height: 30),
-                        ),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(github, width: 30, height: 40),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                    child: Divider(thickness: 1),
-                  ),
-                  SizedBox(height: paddingVertical),
-
-                  // Sign up link
-                  RichText(
-                    text: TextSpan(
-                      text: 'Have an account? ',
-                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w400, fontSize: fontSize),
-                      children: <TextSpan>[
-                        TextSpan(
-                          text: 'Log in',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: buttonColor1),
-                          recognizer: TapGestureRecognizer()..onTap = () {
-                           context.push('/');
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-  },
-),
-      ),
-);
-    } 
-    else if (isTablet) {
-      // Tablet Layout
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: SafeArea(
-            child: Center(
-              child: Column(
-                children: [
+                ),
+                // Show loading overlay when API call is in progress
+                if (state.status == Status.processing)
                   Container(
-                    width: double.infinity,
-                    height: 300,
-                    padding: EdgeInsets.all(paddingVertical),
-                    decoration: BoxDecoration(
-                      image: DecorationImage(image: AssetImage(account1)),
+                    color: Colors.black.withOpacity(0.5), // Semi-transparent overlay
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: buttonColor1, // Use primary button color
+                      ),
                     ),
                   ),
-
-                ],
-              ),
+              ],
             ),
+          );
+        },
+      ),
+    );
+  }
+
+
+  Widget _buildStepContent(int index, UserSignUpState state) {
+    switch (index) {
+      case 0:
+        return EmailField(userSignUpBloc, state);
+      case 1:
+        return NameFields(userSignUpBloc, state);
+      case 2:
+        return BirthdayField(userSignUpBloc, state);
+      case 3:
+        return GenderField(userSignUpBloc, state);
+      case 4:
+        return PhoneField(userSignUpBloc, state);
+      case 5:
+        return AddressField(userSignUpBloc, state);
+      case 6:
+        return PasswordField(userSignUpBloc, state);
+      default:
+        return Container();
+    }
+  }
+
+  Widget _buildNavigationButtons(BuildContext context, UserSignUpState state) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        if (state.currentStep > 0)
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.grey),
+            onPressed: () {
+              print("Going back from step: ${state.currentStep}");
+              context.read<UserSignUpBloc>().add(UserSignUpPreviousStep());
+              pageController.previousPage(
+                duration: Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            },
+          ),
+        Expanded(
+          child: CustomButton(
+            buttonText: state.currentStep == stepLabels.length - 1 ? "Finish" : "Continue",
+            onPressed: () {
+              print("Current step before: ${state.currentStep}");
+
+              if (state.currentStep == stepLabels.length - 1) {
+                // If on the last step, trigger the signup API call
+                print("Current step submitted");
+                context.read<UserSignUpBloc>().add(UserSignUpSubmit());
+              } else {
+                // Otherwise, move to the next step
+                context.read<UserSignUpBloc>().add(UserSignUpNextStep());
+              }
+            },
+            color1: buttonColor1,
+            color2: buttonColor2,
           ),
         ),
-      );
-    } else {
-      // Web Layout
-      return BlocProvider(
-  create: (context) => UserSignUpBloc(),
-  child: Scaffold(
-        backgroundColor: Colors.white,
-        body: BlocConsumer<UserSignUpBloc, UserSignUpState>(
-  listener: (context, state) {
-    // TODO: implement listener
-  },
-  builder: (context, state) {
-    return SingleChildScrollView(
-          child: SafeArea(
-            child: Center(
-              child: Row(
-                children: [
-                  Expanded(child: Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        height: 300,
-                        padding: EdgeInsets.all(paddingVertical),
-                        decoration: BoxDecoration(
-                          image: DecorationImage(image: AssetImage(account1)),
-                        ),
-                      ),
-                      Text("Create account", style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize + 4)),
-                      SizedBox(height: paddingVertical),
-                      // Similar structure for web, but with more spacing
-                      SizedBox(height: paddingVertical),
+      ],
+    );
+  }
 
-                    ],
-                  )),
-                ],
-              ),
-            ),
+  Widget _buildLoginLink(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        text: 'Have an account? ',
+        style: TextStyle(color: Colors.black, fontSize: 16),
+        children: [
+          TextSpan(
+            text: 'Log in',
+            style: TextStyle(fontWeight: FontWeight.bold, color: buttonColor1),
+            recognizer: TapGestureRecognizer()..onTap = () => context.push('/'),
           ),
-        );
-  },
-),
+        ],
       ),
-);
+    );
+  }
+
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents dismissing by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Signup Successful"),
+          content: Text("Your account has been created successfully."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/'); // Navigate to login page
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+
+class EmailField extends StatelessWidget {
+    final UserSignUpBloc bloc;
+    final UserSignUpState state;
+    EmailField(this.bloc,this.state );
+
+    @override
+    Widget build(BuildContext context) {
+      return CustomTextField(
+        hint: "Enter your email",
+        errorText: state.emailError,
+        onChanged: (val) => bloc.add(UserSignUpEmail(val)),
+      );
     }
+  }
+
+  class NameFields extends StatelessWidget {
+    final UserSignUpBloc bloc;
+    final UserSignUpState state;
+    NameFields(this.bloc,this.state);
+
+    @override
+    Widget build(BuildContext context) {
+      return Column(
+        children: [
+          CustomTextField(
+            hint: "First Name",
+            errorText: state.firstNameError,
+            onChanged: (val) => bloc.add(UserSignUpName(val)),
+          ),
+          SizedBox(height: 20,),
+          CustomTextField(
+            hint: "Last Name",
+            errorText: state.lastNameError,
+            onChanged: (val) => bloc.add(UserSignUpLastName(val)),
+          ),
+        ],
+      );
+    }
+  }
+
+  class PhoneField extends StatelessWidget {
+    final UserSignUpBloc bloc;
+    final UserSignUpState state;
+    PhoneField(this.bloc,this.state);
+
+    @override
+    Widget build(BuildContext context) {
+      return CustomTextField(
+        hint: "Enter your phone number",
+        errorText: state.phoneNumberError,
+        onChanged: (val) => bloc.add(UserSignUpPhoneNumber(val)),
+      );
+    }
+  }
+
+  class AddressField extends StatelessWidget {
+    final UserSignUpBloc bloc;
+    final UserSignUpState state;
+    AddressField(this.bloc,this.state);
+
+    @override
+    Widget build(BuildContext context) {
+      return CustomTextField(
+        hint: "Enter your address",
+        errorText: state.addressError,
+        onChanged: (val) => bloc.add(UserSignUpAddress(val)),
+      );
+    }
+  }
+
+  class PasswordField extends StatelessWidget {
+    final UserSignUpBloc bloc;
+    final UserSignUpState state;
+    PasswordField(this.bloc,this.state);
+
+    @override
+    Widget build(BuildContext context) {
+      return CustomTextField(
+        hint: "Enter your password",
+        errorText: state.passwordError,
+        isPassword: true,
+        onChanged: (val) => bloc.add(UserSignUpPassword(val)),
+      );
+    }
+  }
+
+  class BirthdayField extends StatelessWidget {
+    final UserSignUpBloc bloc;
+    final UserSignUpState state;
+    BirthdayField(this.bloc,this.state);
+
+    @override
+    Widget build(BuildContext context) {
+      return CustomTextField(
+        hint: "Enter your birthday (YYYY-MM-DD)",
+        errorText: state.dobError,
+        onChanged: (val) => bloc.add(UserSignUpDob(val)),
+      );
+    }
+  }
+
+class GenderField extends StatelessWidget {
+  final UserSignUpBloc bloc;
+  final UserSignUpState state;
+
+  GenderField(this.bloc, this.state);
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: state.gender.isNotEmpty ? state.gender : null, // Ensure selected gender is displayed
+      hint: const Text("Select Gender"),
+      items: ["Male", "Female", "Other"].map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: (val) {
+        bloc.add(UserSignUpGender(val!)); // Trigger event when gender is selected
+      },
+    );
   }
 }

@@ -1,358 +1,215 @@
-import 'package:crafting_custom_woodworks/common_widget/custom_button.dart';
 import 'package:crafting_custom_woodworks/common_widget/extentions.dart';
-import 'package:crafting_custom_woodworks/resources/color_resources.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../Network/service.dart';
+import '../../../Network/repository.dart';
 import '../../../common_widget/CustomTextField.dart';
+import '../../../common_widget/custom_button.dart';
+import '../../../common_widget/showCustomDialog.dart';
+import '../../../resources/color_resources.dart';
 import '../../../resources/image_resources.dart';
+import 'bloc/user_login_bloc.dart';
+import 'bloc/user_login_event.dart';
+import 'bloc/user_login_state.dart';
 
 class UserLoginScreen extends StatelessWidget {
   const UserLoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final height = MediaQuery.sizeOf(context).height;
+    return BlocProvider(
+      create: (context) => UserLoginBloc(repository: Repository(service: Service())),
+      child: const UserLoginView(),
+    );
+  }
+}
+
+class UserLoginView extends StatelessWidget {
+  const UserLoginView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     final isMobile = context.isMobile();
     final isTablet = context.isTablet();
-
 
     double paddingHorizontal = width * 0.05;
     double paddingVertical = height * 0.02;
     double fontSize = isMobile ? 16 : (isTablet ? 18 : 20);
 
-    if (isMobile) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: SafeArea(
-            child: Center(
-              child: Column(
-                children: [
-                  SizedBox(height: 8,),
-                   Image.asset(
-                     height: height*0.3,
-                     logo,
-                   ),
+    return BlocConsumer<UserLoginBloc, UserLoginState>(
+      listener: (context, state) {
+        if (state.status == Status.success) {
+          showCustomDialog(
+            context: context,
+            title: "Login Successful",
+            message: "Welcome back!",
+            type: CustomDialogType.success,
+            onButtonPressed: () => context.go('/user_dashboard'),
+          );
+        } else if (state.status == Status.error) {
+          showCustomDialog(
+            context: context,
+            title: "Login Failed",
+            message: state.error!,
+            type: CustomDialogType.error,
+          );
+        }
+      },
+      builder: (context, state) {
+        final bloc = context.watch<UserLoginBloc>();
 
-                  // Log in text
-                  Text("Log in", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 23)),
-                  SizedBox(height: paddingVertical),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text('Email', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
+        return Stack(
+          children: [
+            Scaffold(
+              backgroundColor: Colors.white,
+              body: SingleChildScrollView(
+                child: SafeArea(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 8),
+                          Image.asset(logo, height: height * 0.3),
+                          const Text("Log in", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 23)),
+                          SizedBox(height: paddingVertical),
+                          EmailField(bloc: bloc, state: state),
+                          SizedBox(height: paddingVertical),
+                          PasswordField(bloc: bloc, state: state),
+                          SizedBox(height: paddingVertical),
+                          CustomButton(
+                            buttonText: 'Log in',
+                            onPressed: () => bloc.add(LoginSubmit()),
+                            color1: buttonColor1,
+                            color2: buttonColor2,
                           ),
-                        ),
-                        CustomTextField(hint: "Demo123@gmail.com"),
-                        SizedBox(height: paddingVertical),
+                          SizedBox(height: paddingVertical),
+                          SizedBox(
+                            width: width,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text("Log in with", style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
+                                const SizedBox(width: 10),
+                                InkWell(
+                                  onTap: () {
+                                    bloc.add(GoogleLoginEvent());
+                                  },
+                                  child: Image.asset(google, width: 25, height: 30),
+                                ),
+                                const SizedBox(width: 10),
+                                InkWell(
+                                  onTap: () {
+                                    BlocProvider.of<UserLoginBloc>(context).add(FacebookLoginEvent());
 
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text('Password', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
+                                  },
+                                  child: Image.asset(facebook, width: 25, height: 30),
+                                ),
+                                const SizedBox(width: 10),
+                                InkWell(
+                                  onTap: () {},
+                                  child: Image.asset(github, width: 30, height: 40),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        CustomTextField(hint: "Demo123"),
-                      ],
+                          SizedBox(height: paddingVertical),
+                          RichText(
+                            text: TextSpan(
+                              text: 'No account? ',
+                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w400, fontSize: fontSize),
+                              children: <TextSpan>[
+                                TextSpan(
+                                  text: 'Sign up',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: buttonColor1),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () => context.push('/user_sign_up'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  SizedBox(height: paddingVertical),
-                  Padding(
-                    padding: EdgeInsets.all(paddingHorizontal),
-                    child: CustomButton(buttonText: 'Log in', onPressed: ()  {
-                      context.go('/user_dashboard');
-                    }, color1: buttonColor1, color2: buttonColor2),
-                  ),
-                  SizedBox(height: paddingVertical),
-
-                  // Social login buttons
-                  SizedBox(
-                    width: width,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Log in with", style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(google, width: 25, height: 30),
-                        ),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(facebook, width: 25, height: 30),
-                        ),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(github, width: 30, height: 40),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                    child: Divider(thickness: 1),
-                  ),
-                  SizedBox(height: paddingVertical),
-
-                  // Sign up link
-                  RichText(
-                    text: TextSpan(
-                      text: 'No account? ',
-                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w400, fontSize: fontSize),
-                      children: <TextSpan>[
-                        TextSpan(
-                          text: 'Sign up',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: buttonColor1),
-                          recognizer: TapGestureRecognizer()..onTap = () {
-                            context.push('/user_sign_up');
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      );
-    }
-    else if (isTablet) {
-      // Tablet Layout
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: SafeArea(
-            child: Center(
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 300,
-                    padding: EdgeInsets.all(paddingVertical),
-                    decoration: BoxDecoration(
-                      image: DecorationImage(image: AssetImage(logo)),
+
+            // Full-screen loading overlay
+            if (state.status == Status.processing)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.7),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 5.0,
                     ),
                   ),
-                  Text("Log in", style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize + 2)),
-                  SizedBox(height: paddingVertical),
-                  SizedBox(height: paddingVertical),
-          
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text('Email', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                          ),
-                        ),
-                        CustomTextField(hint: "Demo123@gmail.com"),
-                        SizedBox(height: paddingVertical),
-          
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text('Password', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                          ),
-                        ),
-                        CustomTextField(hint: "Demo123"),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: paddingVertical),
-                  Padding(
-                    padding: EdgeInsets.all(paddingHorizontal),
-                    child: CustomButton(buttonText: 'Log in', onPressed: () => {}, color1: buttonColor1, color2: buttonColor2),
-                  ),
-                  SizedBox(height: paddingVertical),
-          
-                  // Social login buttons
-                  SizedBox(
-                    width: width,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Log in with", style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(google, width: 25, height: 30),
-                        ),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(facebook, width: 25, height: 30),
-                        ),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Image.asset(github, width: 30, height: 40),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                    child: Divider(thickness: 1),
-                  ),
-                  SizedBox(height: paddingVertical),
-          
-                  // Sign up link
-                  RichText(
-                    text: TextSpan(
-                      text: 'No account? ',
-                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w400, fontSize: fontSize),
-                      children: <TextSpan>[
-                        TextSpan(
-                          text: 'Sign up',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                          recognizer: TapGestureRecognizer()..onTap = () {
-                            print("Go to Sign Up Screen");
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
-      );
-    }
-    else {
-      // Web Layout
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-
-          child: SafeArea(
-            child: Center(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: Image(image: AssetImage(account1))
-                  ),
-                  Expanded(child: Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        height: 300,
-                        padding: EdgeInsets.all(paddingVertical),
-                        decoration: BoxDecoration(
-                          image: DecorationImage(image: AssetImage(logo)),
-                        ),
-                      ),
-                      Text("Log in", style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize + 4)),
-                      SizedBox(height: paddingVertical),
-                      // Similar structure for web, but with more spacing
-                      SizedBox(height: paddingVertical),
-
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: Text('Email', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                              ),
-                            ),
-                            CustomTextField(hint: "Demo123@gmail.com"),
-                            SizedBox(height: paddingVertical),
-
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: Text('Password', style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                              ),
-                            ),
-                            CustomTextField(hint: "Demo123"),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: paddingVertical),
-                      Padding(
-                        padding: EdgeInsets.all(paddingHorizontal),
-                        child: CustomButton(buttonText: 'Log in', onPressed: () => {}, color1: buttonColor1, color2: buttonColor2),
-                      ),
-                      SizedBox(height: paddingVertical),
-
-                      // Social login buttons
-                      SizedBox(
-                        width: width,
-                        child: Wrap(
-                          // mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text("Log in with", style: TextStyle(fontWeight: FontWeight.w500, fontSize: fontSize)),
-                            const SizedBox(width: 10),
-                            InkWell(
-                              onTap: () {},
-                              child: Image.asset(google, width: 25, height: 30),
-                            ),
-                            const SizedBox(width: 10),
-                            InkWell(
-                              onTap: () {},
-                              child: Image.asset(facebook, width: 25, height: 30),
-                            ),
-                            const SizedBox(width: 10),
-                            InkWell(
-                              onTap: () {},
-                              child: Image.asset(github, width: 30, height: 40),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                        child: Divider(thickness: 1),
-                      ),
-                      SizedBox(height: paddingVertical),
-
-                      // Sign up link
-                      RichText(
-                        text: TextSpan(
-                          text: 'No account? ',
-                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w400, fontSize: fontSize),
-                          children: <TextSpan>[
-                            TextSpan(
-                              text: 'Sign up',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                              recognizer: TapGestureRecognizer()..onTap = () {
-                                print("Go to Sign Up Screen");
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
+          ],
+        );
+      },
+    );
   }
 }
+
+
+class EmailField extends StatelessWidget {
+  final UserLoginBloc bloc;
+  final UserLoginState state;
+
+  const EmailField({super.key, required this.bloc, required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Email", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+          CustomTextField(
+            hint: "Enter your email",
+            errorText: state.emailValidationMsg?.isNotEmpty == true ? state.emailValidationMsg : null,
+            onChanged: (val) => bloc.add(EmailInput(val)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PasswordField extends StatelessWidget {
+  final UserLoginBloc bloc;
+  final UserLoginState state;
+
+  const PasswordField({super.key, required this.bloc, required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Password", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+          CustomTextField(
+            hint: "Enter your password",
+            errorText: state.passwordValidationMsg?.isNotEmpty == true ? state.passwordValidationMsg : null,
+            onChanged: (val) => bloc.add(PasswordInput(val)),
+            isPassword: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+

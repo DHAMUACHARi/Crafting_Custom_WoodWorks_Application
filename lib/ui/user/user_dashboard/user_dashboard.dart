@@ -1,5 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:marquee/marquee.dart';
+
+import '../user_login/user_login_screen.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -282,12 +287,72 @@ class CartScreen extends StatelessWidget {
   }
 }
 
+
+
 class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({Key? key}) : super(key: key);
+
+  Future<void> _logout(BuildContext context) async {
+    try {
+      await GoogleSignIn().signOut(); // Sign out from Google
+      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      context.go('/'); // Navigate to login screen
+    } catch (e) {
+      print("Logout Error: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Settings Page'));
+    final User? user = FirebaseAuth.instance.currentUser; // Get current user
+
+    return Scaffold(
+      appBar: AppBar(title: Text("Settings")),
+      body: Center(
+        child: user != null
+            ? Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Profile Image
+            CircleAvatar(
+              radius: 40,
+              backgroundImage: user.photoURL != null
+                  ? NetworkImage(user.photoURL!)
+                  : AssetImage('assets/default_profile.png') as ImageProvider,
+            ),
+            SizedBox(height: 10),
+
+            // User Name
+            Text(
+              user.displayName ?? "No Name",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 5),
+
+            // User Email
+            Text(
+              user.email ?? "No Email",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            SizedBox(height: 20),
+
+            // Logout Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () => _logout(context),
+              child: Text("Logout", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        )
+            : Text("No user logged in"),
+      ),
+    );
   }
 }
+
 
 // Search Delegate for Filtering Products
 class ProductSearchDelegate extends SearchDelegate {

@@ -17,7 +17,7 @@ class CustomButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(32),
           gradient: LinearGradient(colors: [color1, color2])),
       child: ElevatedButton(
-          onPressed: onPressed,
+          onPressed: onPressed?? (){},
           style: ElevatedButton.styleFrom(
 
               elevation: 0,
